@@ -7,7 +7,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: sample-app-bucket-12345
-      AccessControl: PublicRead                 # Issue 1: public read ACL
+      AccessControl: Private                 # Fixed Issue 1: Changed from PublicRead to Private
       # Added cross-region replication configuration for improved data durability and availability
       ReplicationConfiguration:
         Role: !GetAtt ReplicationRole.Arn
@@ -71,8 +71,13 @@ Resources:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
-                Action: '*'                       # Issue 2: wildcard action
-                Resource: '*'                     # Issue 3: wildcard resource
+                Action: 
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                  - 's3:ListBucket'
+                Resource: 
+                  - !GetAtt AppBucket.Arn
+                  - !Sub '${AppBucket.Arn}/*'
 
   OpenSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -82,4 +87,4 @@ Resources:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0                     # Issue 4: SSH open to the world
+          CidrIp: 10.0.0.0/24                     # Fixed Issue 4: Restricted SSH access to a specific subnet
